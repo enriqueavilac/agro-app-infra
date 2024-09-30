@@ -42,6 +42,7 @@ jobs:
                 echo "::set-output name=extra_subnet_id::$EXTRA_SUBNET_ID"
 
     agro-app-deploy:
+        needs: forecasting-infra-deploy
         runs-on: ubuntu-latest
         defaults:
             run:
@@ -61,7 +62,7 @@ jobs:
             - run: |
                 sam deploy \
                   --parameter-overrides \
-                    VpcId=${{ needs.forecasting-infra-deploy.outputs.vpc_id }} \
-                    SubnetId=${{ needs.forecasting-infra-deploy.outputs.subnet_id }} \
-                    ExtraSubnetId=${{ needs.forecasting-infra-deploy.outputs.extra_subnet_id }} \
+                    ParameterKey=VpcId,ParameterValue=${{ needs.forecasting-infra-deploy.outputs.vpc_id }} \
+                    ParameterKey=SubnetId,ParameterValue=${{ needs.forecasting-infra-deploy.outputs.subnet_id }} \
+                    ParameterKey=ExtraSubnetId,ParameterValue=${{ needs.forecasting-infra-deploy.outputs.extra_subnet_id }} \
                     --no-confirm-changeset --no-fail-on-empty-changeset
