@@ -1,0 +1,218 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  agro-app
+
+  Agro App Main Infrastructure
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID where resources will be created.
+  
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The Main Subnet ID for the ECS and RDS resources.
+
+  ExtraSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: An extra Subnet ID for the ECS and RDS resources.
+
+  BackupSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A backup Subnet ID for the ECS and RDS resources.
+
+Resources:
+
+  ApiGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      DefinitionUri: ./openapi3.yaml
+  
+  VpcLink:
+    Type: AWS::ApiGatewayV2::VpcLink
+    Properties:
+      Name: MyVpcLink
+      SubnetIds:
+        - !Ref SubnetId
+  
+  ApiIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: HTTP_PROXY
+      IntegrationUri: !Sub 'http://${LoadBalancer.DNSName}'
+      PayloadFormatVersion: '1.0'
+      ConnectionId: !Ref VpcLink
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: MyLoadBalancer
+      Subnets:
+        - !Ref SubnetId
+      SecurityGroups: 
+        - !Ref LoadBalancerSecurityGroup
+  
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP and HTTPS access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+      LoadBalancerArn: !Ref TargetGroup
+      Port: 80
+      Protocol: HTTP
+  
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: agro-target-group
+      VpcId: !Ref VpcId
+      Protocol: HTTP
+      Port: 80
+      TargetType: ip
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: '80'
+      HealthCheckPath: /
+      Matcher:
+        HttpCode: '200'
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+
+  AgroEcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: agro-cluster
+
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: AgroDBInstance
+      DBInstanceClass: db.t2.micro
+      Engine: mysql
+      EngineVersion: 8.0.28
+      MasterUsername: admin
+      MasterUserPassword: passw0rd
+      DBName: AGRODB
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for RDS
+      VpcId: !Ref VpcId
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: DB subnet group
+      SubnetIds:
+       - !Ref SubnetId
+       - !Ref ExtraSubnetId
+       - !Ref BackupSubnetId
+
+  ForecastTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Forecast
+      AttributeDefinitions:
+        - AttributeName: forecast_id
+          AttributeType: N  # INT
+        - AttributeName: crop_id
+          AttributeType: N  # INT
+        # - AttributeName: forecast_date
+          # AttributeType: S  # DATE String
+      KeySchema:
+        - AttributeName: forecast_id
+          KeyType: HASH  # Partition key
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: CropIdIndex
+          KeySchema:
+            - AttributeName: crop_id
+              KeyType: HASH  # Partition key
+          Projection:
+            ProjectionType: ALL  # Include all attributes
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+  # MyEcsService:
+  #   Type: AWS::ECS::Service
+  #   Properties:
+  #     Cluster: !Ref EcsCluster
+  #     TaskDefinition: !Ref MyEcsTaskDefinition
+  #     LaunchType: FARGATE
+  #     DesiredCount: 2
+  #     NetworkConfiguration:
+  #       AwsvpcConfiguration:
+  #         Subnets: 
+  #           - !Ref SubnetId
+  #         SecurityGroups:
+  #           - !Ref SecurityGroupId
+  #         AssignPublicIp: ENABLED
+  #     LoadBalancers:
+  #       - ContainerName: my-container
+  #         ContainerPort: 80
+  #         TargetGroupArn: !Ref MyTargetGroup
+
+  # ECSSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Security group for ECS tasks
+  #     VpcId: !Ref VpcId
+
+  # ECSTaskDefinition:
+  #   Type: AWS::ECS::TaskDefinition
+  #   Properties:
+  #     Family: Task
+  #     NetworkMode: awsvpc
+  #     ContainerDefinitions:
+  #       - Name: Container1
+  #         Image: your-image-1
+  #         PortMappings:
+  #           - ContainerPort: 80
+  #       - Name: Container2
+  #         Image: your-image-2
+  #         PortMappings:
+  #           - ContainerPort: 80
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "API Gateway URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/"
+  
+  LoadBalancerDNS:
+    Description: "Load Balancer DNS Name"
+    Value: !GetAtt LoadBalancer.DNSName
+  
+  TargetGroupArn:
+    Description: "Load Balancer Target Group for ECS Services"
+    Value: !GetAtt TargetGroup.TargetGroupArn
+  
+  AgroEcsClusterName:
+    Description: "Agro Management ECS Cluster name"
+    Value: !Ref AgroEcsCluster
+
+

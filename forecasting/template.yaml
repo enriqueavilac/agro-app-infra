@@ -1,0 +1,193 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Forecasting
+
+  SAM Template for Agro Management Forecasting
+
+Resources:
+  # Include resources from separate YAML files
+  AgroVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: AgroVPC
+
+  AgroSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AgroVPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AgroSubnet
+
+  AgroExtraSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AgroVPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AgroExtraSubnet
+
+  AgroBackupSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AgroVPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [2, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: AgroBackupSubnet
+
+  SensorsDataS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'sensors-s3-bucket-${AWS::Region}'
+
+  AggregatedDataS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'aggregated-data-s3-bucket-${AWS::Region}'
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub 'arn:aws:s3:::sensors-s3-bucket-${AWS::Region}/*'
+                  - !Sub 'arn:aws:s3:::aggregated-data-s3-bucket-${AWS::Region}/*'
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: app.lambdaHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - x86_64
+
+  MLEC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SSMAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:ListCommands
+                  - ssm:ListCommandInvocations
+                  - ssm:UpdateInstanceInformation
+                  - ssm:GetConnectionStatus
+                Resource: "*"
+        - PolicyName: S3ReadAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::aggregated-data-s3-bucket-${AWS::Region}/*'
+
+  MLEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MLEC2Role
+
+  AgroEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow outbound access for SSM and access to MSK inside the net
+      VpcId: !Ref AgroVPC
+      SecurityGroupEgress:
+        - IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 9092  # Default Kafka port
+          ToPort: 9092
+
+  AgroMLEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0e54eba7c51c234f6 # Amazon Linux 2 AMI ID
+      NetworkInterfaces:
+        - DeviceIndex: "0"
+          GroupSet:
+            - !Ref AgroEC2SecurityGroup
+          SubnetId: !Ref AgroSubnet
+      IamInstanceProfile: !Ref MLEC2InstanceProfile
+      Tags:
+        - Key: app
+          Value: AgroManagement
+        - Key: type
+          Value: Machine Learning Model
+
+  AgroMSKCluster:
+    Type: AWS::MSK::Cluster
+    Properties:
+      ClusterName: AgroMSKCluster
+      KafkaVersion: 3.5.1
+      NumberOfBrokerNodes: 2
+      BrokerNodeGroupInfo:
+        InstanceType: kafka.m5.large
+        ClientSubnets:
+          - !Ref AgroSubnet
+          - !Ref AgroExtraSubnet
+        SecurityGroups:
+          - !Ref AgroEC2SecurityGroup
+
+Outputs:
+  VpcId:
+    Description: The ID of the Agro VPC
+    Value: !Ref AgroVPC
+
+  SubnetId:
+    Description: The ID of the primary Agro Subnet
+    Value: !Ref AgroSubnet
+
+  ExtraSubnetId:
+    Description: The ID of the extra Agro Subnet
+    Value: !Ref AgroExtraSubnet
+  
+  BackupSubnetId:
+    Description: The ID of the extra Agro Subnet
+    Value: !Ref AgroBackupSubnet

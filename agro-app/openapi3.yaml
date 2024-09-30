@@ -1,0 +1,1020 @@
+openapi: 3.0.0
+info:
+  title: Agro Management API
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags:
+        - Users
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    put:
+      tags:
+        - Users
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: User deleted
+        '404':
+          description: User not found
+
+  /users/{id}/crops:
+    get:
+      tags:
+        - Crops
+      summary: Get all crops for a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of crops for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Crop'
+
+  /crops:
+    get:
+      tags:
+        - Crops
+      summary: Get all crops by the logged user
+      responses:
+        '200':
+          description: A list of crops
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Crop'
+    post:
+      tags:
+        - Crops
+      summary: Create a new crop
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CropInput'
+      responses:
+        '201':
+          description: Crop created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+
+  /crops/{cropId}:
+    get:
+      tags:
+        - Crops
+      summary: Get a crop by ID
+      parameters:
+        - name: cropId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Crop details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+        '404':
+          description: Crop not found
+    put:
+      tags:
+        - Crops
+      summary: Update a crop
+      parameters:
+        - name: cropId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CropInput'
+      responses:
+        '200':
+          description: Crop updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Crop'
+        '404':
+          description: Crop not found
+    delete:
+      tags:
+        - Crops
+      summary: Delete a crop
+      parameters:
+        - name: cropId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Crop deleted
+        '404':
+          description: Crop not found
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get a product by ID
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+    put:
+      tags:
+        - Products
+      summary: Update a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+    delete:
+      tags:
+        - Products
+      summary: Delete a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Product deleted
+        '404':
+          description: Product not found
+
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: Get all transactions
+      responses:
+        '200':
+          description: A list of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    post:
+      tags:
+        - Transactions
+      summary: Create a new transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+
+  /transactions/{transactionId}:
+    get:
+      tags:
+        - Transactions
+      summary: Get a transaction by ID
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+    put:
+      tags:
+        - Transactions
+      summary: Update a transaction
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+    delete:
+      tags:
+        - Transactions
+      summary: Delete a transaction
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Transaction deleted
+        '404':
+          description: Transaction not found
+
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get all orders
+      responses:
+        '200':
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+  /orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get an order by ID
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+    put:
+      tags:
+        - Orders
+      summary: Update an order
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderInput'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+  /payments:
+    get:
+      tags:
+        - Payments
+      summary: Get all payments
+      responses:
+        '200':
+          description: A list of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+    post:
+      tags:
+        - Payments
+      summary: Create a new payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '201':
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+
+  /payments/{paymentId}:
+    get:
+      tags:
+        - Payments
+      summary: Get a payment by ID
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Payment details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          description: Payment not found
+    put:
+      tags:
+        - Payments
+      summary: Update a payment
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '200':
+          description: Payment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          description: Payment not found
+
+  /billing:
+    get:
+      tags:
+        - Billing
+      summary: Get all billing records
+      responses:
+        '200':
+          description: A list of billing records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Billing'
+    post:
+      tags:
+        - Billing
+      summary: Create a new billing record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingInput'
+      responses:
+        '201':
+          description: Billing record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Billing'
+
+  /billing/{billingId}:
+    get:
+      tags:
+        - Billing
+      summary: Get a billing record by ID
+      parameters:
+        - name: billingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Billing record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Billing'
+        '404':
+          description: Billing record not found
+    put:
+      tags:
+        - Billing
+      summary: Update a billing record
+      parameters:
+        - name: billingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingInput'
+      responses:
+        '200':
+          description: Billing record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Billing'
+        '404':
+          description: Billing record not found
+
+  /logistics:
+    get:
+      tags:
+        - Logistics
+      summary: Get all logistics records
+      responses:
+        '200':
+          description: A list of logistics records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Logistics'
+    post:
+      tags:
+        - Logistics
+      summary: Create a new logistics record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogisticsInput'
+      responses:
+        '201':
+          description: Logistics record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logistics'
+
+  /logistics/{logisticsId}:
+    get:
+      tags:
+        - Logistics
+      summary: Get a logistics record by ID
+      parameters:
+        - name: logisticsId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Logistics record details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logistics'
+        '404':
+          description: Logistics record not found
+    put:
+      tags:
+        - Logistics
+      summary: Update a logistics record
+      parameters:
+        - name: logisticsId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogisticsInput'
+      responses:
+        '200':
+          description: Logistics record updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logistics'
+        '404':
+          description: Logistics record not found
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+
+    UserInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        address:
+          type: string
+        phone_number:
+          type: string
+      required:
+        - name
+        - email
+        - password
+        - phone_number
+
+    Crop:
+      type: object
+      properties:
+        crop_id:
+          type: integer
+        user_id:
+          type: integer
+        location:
+          type: string
+        variation:
+          type: string
+        size:
+          type: number
+          format: float
+        sowing_date:
+          type: string
+          format: date
+        harvesting_date:
+          type: string
+          format: date
+
+    CropInput:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        location:
+          type: string
+        variation:
+          type: string
+        size:
+          type: number
+          format: float
+        sowing_date:
+          type: string
+          format: date
+        harvesting_date:
+          type: string
+          format: date
+      required:
+        - user_id
+        - location
+        - variation
+        - size
+        - sowing_date
+        - harvesting_date
+
+    Product:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        unit_price:
+          type: number
+          format: decimal
+
+    ProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        unit_price:
+          type: number
+          format: decimal
+      required:
+        - name
+        - type
+        - unit_price
+
+    Transaction:
+      type: object
+      properties:
+        transaction_id:
+          type: integer
+        user_id:
+          type: integer
+        product_id:
+          type: integer
+        quantity:
+          type: number
+          format: float
+        transaction_date:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [OFFER, DEMAND]
+
+    TransactionInput:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        product_id:
+          type: integer
+        quantity:
+          type: number
+          format: float
+        transaction_date:
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum: [OFFER, DEMAND]
+      required:
+        - user_id
+        - product_id
+        - quantity
+        - transaction_date
+        - type
+
+    Order:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        user_id:
+          type: integer
+        transaction_id:
+          type: integer
+        total_amount:
+          type: number
+          format: decimal
+        order_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    OrderInput:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        transaction_id:
+          type: integer
+        total_amount:
+          type: number
+          format: decimal
+        order_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+      required:
+        - user_id
+        - transaction_id
+        - total_amount
+        - order_date
+        - status
+
+    Payment:
+      type: object
+      properties:
+        payment_id:
+          type: integer
+        order_id:
+          type: integer
+        amount:
+          type: number
+          format: decimal
+        payment_date:
+          type: string
+          format: date-time
+        payment_method:
+          type: string
+        status:
+          type: string
+
+    PaymentInput:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        amount:
+          type: number
+          format: decimal
+        payment_date:
+          type: string
+          format: date-time
+        payment_method:
+          type: string
+        status:
+          type: string
+      required:
+        - order_id
+        - amount
+        - payment_date
+        - payment_method
+        - status
+
+    Billing:
+      type: object
+      properties:
+        billing_id:
+          type: integer
+        total_amount:
+          type: number
+          format: decimal
+        billing_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+        payment_id:
+          type: integer
+
+    BillingInput:
+      type: object
+      properties:
+        total_amount:
+          type: number
+          format: decimal
+        billing_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+        payment_id:
+          type: integer
+      required:
+        - total_amount
+        - billing_date
+        - status
+
+    Logistics:
+      type: object
+      properties:
+        logistics_id:
+          type: integer
+        order_id:
+          type: integer
+        carrier_name:
+          type: string
+        tracking_number:
+          type: string
+        shipment_date:
+          type: string
+          format: date-time
+        delivery_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    LogisticsInput:
+      type: object
+      properties:
+        order_id:
+          type: integer
+        carrier_name:
+          type: string
+        tracking_number:
+          type: string
+        shipment_date:
+          type: string
+          format: date-time
+        delivery_date:
+          type: string
+          format: date-time
+        status:
+          type: string
+      required:
+        - order_id
+        - carrier_name
+        - tracking_number
+        - shipment_date
+        - status

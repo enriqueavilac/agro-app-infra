@@ -1,0 +1,67 @@
+name: SAM Deploy
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    forecasting-infra-deploy:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: forecasting
+        outputs:
+          vpc_id: ${{ steps.get_output.outputs.vpc_id }}
+          subnet_id: ${{ steps.get_output.outputs.subnet_id }}
+          extra_subnet_id: ${{ steps.get_output.outputs.extra_subnet_id }}
+        steps:
+            - name: Download repo
+              uses: actions/checkout@v3
+            - uses: aws-actions/setup-sam@v2
+              with:
+                use-installer: true
+                token: ${{ secrets.GITHUB_TOKEN }}
+            - uses: aws-actions/configure-aws-credentials@v2
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ secrets.AWS_REGION }}
+            - run: sam build --use-container
+            - run: sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+            - id: get_output
+              run: |
+                VPC_ID=$(aws cloudformation describe-stacks --stack-name forecasting \
+                  --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
+                SUBNET_ID=$(aws cloudformation describe-stacks --stack-name forecasting \
+                  --query "Stacks[0].Outputs[?OutputKey=='SubnetId'].OutputValue" --output text)
+                EXTRA_SUBNET_ID=$(aws cloudformation describe-stacks --stack-name forecasting \
+                  --query "Stacks[0].Outputs[?OutputKey=='ExtraSubnetId'].OutputValue" --output text)
+                echo "::set-output name=vpc_id::$VPC_ID"
+                echo "::set-output name=subnet_id::$SUBNET_ID"
+                echo "::set-output name=extra_subnet_id::$EXTRA_SUBNET_ID"
+
+    agro-app-deploy:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: agro-app
+        steps:
+            - name: Download repo
+              uses: actions/checkout@v3
+            - uses: aws-actions/setup-sam@v2
+              with:
+                use-installer: true
+                token: ${{ secrets.GITHUB_TOKEN }}
+            - uses: aws-actions/cconfigure-aws-credentials@v2
+              with: 
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ secrets.AWS_REGION }}
+            - run: |
+                sam deploy \
+                  --parameter-overrides \
+                    VpcId=${{ needs.forecasting-infra-deploy.outputs.vpc_id }} \
+                    SubnetId=${{ needs.forecasting-infra-deploy.outputs.subnet_id }} \
+                    ExtraSubnetId=${{ needs.forecasting-infra-deploy.outputs.extra_subnet_id }} \
+                    --no-confirm-changeset --no-fail-on-empty-changeset
